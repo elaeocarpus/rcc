@@ -1,0 +1,5 @@
+project:	rcc
+date:		18/03/16
+authors:	phil matthews and vince todd
+description:	this is a radio control module for model railways.
+		Based on STM32F103RB (Cortex-M3) micro and CC2500 2.4GHz RF transceiver.
