@@ -70,7 +70,7 @@ int pwm_ramp_speed(int s_initial, int s_final, int ramp_time)
 			s_increment = 1;
 			update_rate = ramp_time / (s_final - s_initial) /  s_increment;
 		}
-		while (s_current < s_final)
+		while (s_current <= s_final)
 		{
 			pwm_set_speed(s_current);
 			s_current += s_increment;
@@ -84,7 +84,7 @@ int pwm_ramp_speed(int s_initial, int s_final, int ramp_time)
 			s_increment = -1;
 			update_rate = ramp_time / ( s_final - s_initial) /  s_increment;
 		}
-		while (s_current > s_final)
+		while (s_current >= s_final)
 		{
 			pwm_set_speed(s_current);
 			s_current += s_increment;
@@ -98,7 +98,7 @@ int pwm_get_speed(void)
 {
 	uint16_t s_fwd = PWM_S_FWD;
 	uint16_t s_rev = PWM_S_REV;
-	int speed = 50; // debug value
+	int speed;
 
 	if (s_rev)
 	{

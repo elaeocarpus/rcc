@@ -575,7 +575,7 @@ void cmd_mot(void)
 {
 	char s[16];
 	int ramp_time;
-	int speed = 11;
+	int speed;
 	int dir = 1;	// +1 for FORWARD, -1 for REVERSE
 	//int i, n;
 	char *ptr;
