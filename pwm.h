@@ -11,8 +11,10 @@
 #include "stm32f103xb.h"
 
 // read timer registers
-#define PWM_S_FWD 	(TIM2->CCR1)
-#define PWM_S_REV 	(TIM2->CCR2)
+//#define PWM_S_FWD 	(TIM2->CCR1)
+//#define PWM_S_REV 	(TIM2->CCR2)
+#define PWM_S_FWD 	(TIM2->CCR3)
+#define PWM_S_REV 	(TIM2->CCR4)
 #define PWM_S_MAX	(TIM2->ARR)
 
 void pwm_set_speed(int speed);

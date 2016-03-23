@@ -237,11 +237,11 @@ void gpio_init(void)
 	GPIO_Config(GPIOA, GPIO_PIN1, ALT_FUNC_PP, GPIO_OUT_10MHz);		// PWM output
 
 
-	// PA2/UART2_TX set to alternate function output
+	// PA2/TIM2_CCO3 set to alternate function output
 	GPIO_Config(GPIOA, GPIO_PIN2, ALT_FUNC_PP, GPIO_OUT_10MHz);
 
-	// PA3/USART2_RX set to floating input
-	GPIO_Config(GPIOA, GPIO_PIN3, GPIO_FLOAT, GPIO_IN);
+	// PA3/TIM2_CCO4 set to alternate function output
+	GPIO_Config(GPIOA, GPIO_PIN3, ALT_FUNC_PP, GPIO_OUT_10MHz);
 
 //	GPIO_Config(GPIOA, GPIO_PIN5, GPIO_PP, GPIO_OUT_10MHz);				// PA5 GPIO output. (LED2)
 	GPIO_Config(GPIOA, GPIO_PIN5, ALT_FUNC_PP, GPIO_OUT_10MHz);			// PA5 alternate function output (SPI1_SCK)
