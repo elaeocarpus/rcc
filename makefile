@@ -36,11 +36,9 @@ LFLAGS = -mcpu=cortex-m3 -mlittle-endian -mthumb -DSTM32F103xE -lc -Wl,-Map=out.
 # Linker script
 LK_SCRIPT = stm32f103_rcc.ld
 
- 
-
 # Include file directories
-STM32CUBE_ROOT = /home/vince/STM32Cube_FW_F1
-#STM32CUBE_ROOT = /home/pmatthews/stm32Cubef1
+#STM32CUBE_ROOT = /home/vince/STM32Cube_FW_F1
+STM32CUBE_ROOT = /home/pmatthews/stm32Cubef1
 INCLUDE = $(STM32CUBE_ROOT)/Drivers/CMSIS/Device/ST/STM32F1xx/Include
 INCLUDE_CORE = $(STM32CUBE_ROOT)//Drivers/CMSIS/Include
 
@@ -122,4 +120,5 @@ clean:
 	@echo "clean"
 	rm *.o
 	rm *.elf
+	rm *.map
 	

@@ -9,6 +9,10 @@
 #include "pwm.h"
 #include "timer.h"
 
+
+void delay(int t);
+
+
 /*
  * set motor speed
  * speed is a number from -maxspeed .. maxspeed)
@@ -74,7 +78,7 @@ int pwm_ramp_speed(int s_initial, int s_final, int ramp_time)
 		{
 			pwm_set_speed(s_current);
 			s_current += s_increment;
-			delay(update_rate);
+			//delay(update_rate);
 		}
 	}
 	else

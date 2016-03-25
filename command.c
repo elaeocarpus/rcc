@@ -576,7 +576,7 @@ void cmd_mot(void)
 	char s[16];
 	int ramp_time;
 	int speed;
-	int dir = 1;	// +1 for FORWARD, -1 for REVERSE
+	//int dir = 1;	// +1 for FORWARD, -1 for REVERSE
 	//int i, n;
 	char *ptr;
 
@@ -607,7 +607,7 @@ void cmd_mot(void)
 	print_str("current speed : ");
 	print_str(s);
 	print_str("\n");
-	return 0;
+	return;
 }
 
 /*
