@@ -26,6 +26,7 @@
 
 void timer2_init(void);
 void timer3_init(void);
+void timer4_init(void);
 
 //uint16_t TIM_ReadConfigReg(TIM_TypeDef *timer, uint32_t reg);
 

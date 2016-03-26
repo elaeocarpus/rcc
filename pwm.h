@@ -13,9 +13,9 @@
 // read timer registers
 //#define PWM_S_FWD 	(TIM2->CCR1)
 //#define PWM_S_REV 	(TIM2->CCR2)
-#define PWM_S_FWD 	(TIM2->CCR3)
-#define PWM_S_REV 	(TIM2->CCR4)
-#define PWM_S_MAX	(TIM2->ARR)
+#define PWM_S_FWD 	(TIM4->CCR3)
+#define PWM_S_REV 	(TIM4->CCR4)
+#define PWM_S_MAX	(TIM4->ARR)
 
 void pwm_set_speed(int speed);
 void pwm_brake(void);
@@ -23,5 +23,10 @@ void pwm_idle(void);
 int pwm_ramp_speed(int s_initial, int s_final, int ramp_time);
 int pwm_get_speed(void);
 void pwm_change_speed(int new_speed, int ramp_time);
+
+
+void pwm_out(int pwm);
+int pwm_incr(int pwm_step);
+
 
 #endif /* PWM_H_ */

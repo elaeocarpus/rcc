@@ -10,7 +10,29 @@
 #include "timer.h"
 
 
+// ---- External functions ----
+
 void delay(int t);
+
+
+
+// ---- Local functions ----
+
+void pwm_fwd(uint32_t pwm);
+void pwm_rev(uint32_t pwm);
+
+
+
+#define PWM_MAX	512
+#define PWM_MIN -512
+
+
+// ---- Private variables ----
+
+static int curr_pwm;
+
+
+
 
 
 /*
@@ -78,7 +100,7 @@ int pwm_ramp_speed(int s_initial, int s_final, int ramp_time)
 		{
 			pwm_set_speed(s_current);
 			s_current += s_increment;
-			//delay(update_rate);
+			delay(update_rate);
 		}
 	}
 	else
@@ -122,4 +144,91 @@ void pwm_change_speed(int new_speed, int ramp_time)
 	pwm_ramp_speed(current_speed, new_speed, ramp_time);
 
 	return;
+}
+
+
+/* pwm_fwd
+ *
+ * Set counter/compare register for PWM forward output.
+ */
+void pwm_fwd(uint32_t pwm)
+{
+	TIM4->CCR3 = pwm;
+}
+
+
+/* pwm_rev
+ *
+ * Set counter/compare register for PWM reverse output.
+ */
+void pwm_rev(uint32_t pwm)
+{
+	TIM4->CCR4 = pwm;
+}
+
+
+/* pwm_out
+ *
+ * pwm		Signed PWM value.
+ * 			Range -512 to + 512
+ *
+ * Sets PWM output.
+ * Sign indicates direction.
+ * Directly sets the PWM output without any ramp up or down.
+ */
+void pwm_out(int pwm)
+{
+	uint32_t pwm_value;
+
+
+	if(pwm > PWM_MAX)
+		pwm = PWM_MAX;
+	if(pwm < PWM_MIN)
+		pwm = PWM_MIN;
+
+	curr_pwm = pwm;
+
+	if(pwm < 0)
+	{
+		pwm_value = (uint32_t)(-pwm);
+
+		pwm_fwd(0);
+		pwm_rev(pwm_value);
+
+	}
+	else
+	{
+		pwm_value = (uint32_t)pwm;
+
+		pwm_fwd(pwm_value);
+		pwm_rev(0);
+
+	}
+
+}
+
+
+
+/* pwm_incr
+ *
+ * Parameters
+ * pwm_step		PWM increment amount
+ *
+ * Increment PWM by the amount in pwm_step.
+ * Returns the actual current PWM value.
+ *
+ */
+int pwm_incr(int pwm_step)
+{
+
+	curr_pwm += pwm_step;
+
+	if(curr_pwm > PWM_MAX)
+		curr_pwm = PWM_MAX;
+	if(curr_pwm < PWM_MIN)
+		curr_pwm = PWM_MIN;
+
+	pwm_out(curr_pwm);
+
+	return curr_pwm;
 }

@@ -29,6 +29,7 @@
 #define USART2_clk_enable() (RCC->APB1ENR |= RCC_APB1ENR_USART2EN)
 #define TIM2_clk_enable()	(RCC->APB1ENR |= RCC_APB1ENR_TIM2EN)
 #define TIM3_clk_enable()	(RCC->APB1ENR |= RCC_APB1ENR_TIM3EN)
+#define TIM4_clk_enable()	(RCC->APB1ENR |= RCC_APB1ENR_TIM4EN)
 #define SPI2_clk_enable()	(RCC->APB1ENR |= RCC_APB1ENR_SPI2EN)
 
 
@@ -70,6 +71,7 @@ char x;
 uint8_t freq[3];
 uint8_t regs[0x30];
 
+
 /*
  *
  *
@@ -95,6 +97,9 @@ int main(void)
 	TIM3_clk_enable();		// Enable TIM3CLK clock.
 		// TIM3CLK must be enabled to be able to access TIM3 registers.
 
+	TIM4_clk_enable();		// Enable TIM4CLK clock.
+		// TIM4CLK must be enabled to be able to access TIM4 registers.
+
 	SPI1_clk_enable();		// Enable SPI1 clock.
 		// SPI1 clock source is PCKL2 for APB2 peripherals.
 
@@ -107,8 +112,9 @@ int main(void)
 	// Hardware initialization
 	gpio_init();
 	uart2_init();
-	timer2_init();
-	timer3_init();
+	//timer2_init();
+	//timer3_init();
+	timer4_init();
 	spi_init();
 	spi2_init();
 	adc1_init();
@@ -137,42 +143,13 @@ int main(void)
 
 
 	led_on();
-/*	// Write one byte out SPI2
-		GPIO_BitReset(GPIOB, GPIO_PIN12);			// CSn low
-		x = spi_out(0x3D);							// NOP
-		delay(10);
-		GPIO_BitSet(GPIOB, GPIO_PIN12);				// CSn high
 
-		// Print the received status byte out the serial port
-		ByteToHex(s, x);
-		print_str(s);
-		print_str(" ");
-		print_str("\n");
-*/
 	cc_reset();										// Send reset command to CC2500
 	print_str("CC2500 Reset\n");
 	delay(1000);
-	pwm_set_speed(200);
+	//pwm_set_speed(0);
 
-/*
-	// Read all the config registers
-	cc_read_b(0, regs, 0x2F);
-
-	// Print the configuration registers
-	print_str("Registers:\n");
-	for(reg=0; reg<0x2E; reg++)
-	{
-		ByteToHex(s, reg);
-		print_str(s);
-		print_str(" ");
-
-		x = regs[reg];
-		ByteToHex(s, x);
-		print_str(s);
-		print_str("\n");
-	}
-
-*/
+	pwm_out(0);										// Both FWD and REV PWM output off.
 
 	cmd_proc_init();
 
@@ -182,33 +159,16 @@ int main(void)
 		{
 			c = usart2_read();
 
-			cmd_proc(c);
+			// Adjust speed using +/- keys
+			if(c == '+')
+				pwm_incr(16);
+			if(c == '-')
+				pwm_incr(-16);
 
 
-
-/*			else if(c == 'r')				// RX
-			{
-				cc_cmd_rx();				// SRX
-				print_str("RX\n");
-
-			}
-			else if(c == 't')				// TX
-			{
-				cc_write_cmd(SFSTXON);
-				//cc_write_cmd(STX);
-				print_str("TX\n");
-			}
-			else if(c == 'i')				// Idle
-			{
-				cc_write_cmd(SIDLE);
-				print_str("IDLE\n");
-			}
-*/
-
+			//cmd_proc(c);
 		}
 
-
-//		led_toggle();
 
 	}
 
@@ -236,12 +196,9 @@ void gpio_init(void)
 	// PA1 - TIM2_CCO2
 	GPIO_Config(GPIOA, GPIO_PIN1, ALT_FUNC_PP, GPIO_OUT_10MHz);		// PWM output
 
-
-	// PA2/TIM2_CCO3 set to alternate function output
-	GPIO_Config(GPIOA, GPIO_PIN2, ALT_FUNC_PP, GPIO_OUT_10MHz);
-
-	// PA3/TIM2_CCO4 set to alternate function output
-	GPIO_Config(GPIOA, GPIO_PIN3, ALT_FUNC_PP, GPIO_OUT_10MHz);
+	GPIO_Config(GPIOA, GPIO_PIN2, ALT_FUNC_PP, GPIO_OUT_10MHz);			// PA2/UART2_TX set to alternate function output
+	GPIO_Config(GPIOA, GPIO_PIN3, GPIO_FLOAT, GPIO_IN);					// PA3/USART2_RX set to floating input
+//	GPIO_Config(GPIOA, GPIO_PIN3, ALT_FUNC_PP, GPIO_OUT_10MHz);
 
 //	GPIO_Config(GPIOA, GPIO_PIN5, GPIO_PP, GPIO_OUT_10MHz);				// PA5 GPIO output. (LED2)
 	GPIO_Config(GPIOA, GPIO_PIN5, ALT_FUNC_PP, GPIO_OUT_10MHz);			// PA5 alternate function output (SPI1_SCK)
@@ -250,11 +207,15 @@ void gpio_init(void)
 
 
 	// GPIOB
+	//------
 	GPIOB_clk_enable();
 
-	// PB1
-	GPIO_Config(GPIOB, GPIO_PIN1, GPIO_PULL, GPIO_IN);		// Input,pull-up
+	GPIO_Config(GPIOB, GPIO_PIN1, GPIO_PULL, GPIO_IN);				// PB1 Input,pull-up
 	GPIOB->ODR |= (1UL<<1);
+
+	// PWM outputs
+	GPIO_Config(GPIOB, GPIO_PIN8, ALT_FUNC_PP, GPIO_OUT_10MHz);		// PB8 TIM4_CH3
+	GPIO_Config(GPIOB, GPIO_PIN9, ALT_FUNC_PP, GPIO_OUT_10MHz);		// PB9 TIM4_CH4
 
 	// SPI2
 	GPIO_Config(GPIOB, GPIO_PIN12, GPIO_PP, GPIO_OUT_10MHz);		// PB12 SPI2_NSS
@@ -264,6 +225,7 @@ void gpio_init(void)
 
 
 	// GPIOC
+	//------
 	GPIOC_clk_enable();								// Enable clock to GPIOC
 
 	// PC13 to GPIO input. (User P/B)
