@@ -46,6 +46,8 @@ void dma1_init(void);
 
 void cmd_proc_init(void);
 void cmd_proc(uint8_t c);
+void speed_adjust_mode(char c);
+
 
 void gpio_init(void);
 void delay(int t);
@@ -70,6 +72,8 @@ char x;
 
 uint8_t freq[3];
 uint8_t regs[0x30];
+
+extern int cmd_mode;
 
 
 /*
@@ -159,14 +163,10 @@ int main(void)
 		{
 			c = usart2_read();
 
-			// Adjust speed using +/- keys
-			if(c == '+')
-				pwm_incr(16);
-			if(c == '-')
-				pwm_incr(-16);
-
-
-			//cmd_proc(c);
+			if(cmd_mode == 1)
+				speed_adjust_mode(c);
+			else
+				cmd_proc(c);
 		}
 
 

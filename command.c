@@ -45,6 +45,7 @@ void cmd_command(void);
 int cmd_status(void);
 void help_txt(void);
 void cmd_mot(void);
+void cmd_speed(void);
 
 
 char cmd_buf[CMD_BUF_SIZE];			// Command line buffer.
@@ -58,6 +59,10 @@ char *ptok;
 #define MAX_ARGS 16
 char *args[MAX_ARGS];
 int n_args;
+
+int cmd_mode;
+
+
 
 
 /* cmd_proc_init
@@ -195,7 +200,14 @@ void cmdline_proc(void)
 	}
 	else if(strcmp(cmd, "mot") == 0)
 	{
-		cmd_mot();
+//		cmd_mot();
+		cmd_mode = 1;
+		print_str("Speed adjust mode\n");
+		print_str("Use +/- to adjust speed\n");
+	}
+	else if(strcmp(cmd, "speed") == 0)
+	{
+		cmd_speed();
 	}
 	else
 	{
@@ -610,6 +622,68 @@ void cmd_mot(void)
 	return;
 }
 
+
+/* cmd_speed
+ *
+ * Usage:
+ *
+ * speed			Get the current speed
+ * speed <val>		Set the current speed
+ *
+ * Displays the current speed in all cases.
+ *
+ */
+void cmd_speed(void)
+{
+	int speed;
+	char s[16];
+	char *ptr;
+
+
+	if(n_args == 2)
+	{
+		// Set the speed
+		speed = strtol(args[1], &ptr, 10);			// dec
+		pwm_out(speed);
+	}
+
+	// Get the new speed.
+	speed = pwm_get_speed();
+
+	// Print the current speed in hex.
+	IntToHex(s, speed);
+	print_str("current speed : ");
+	print_str(s);
+	print_str("\n");
+
+}
+
+
+/*			cmd_mode = 1;
+ *
+ */
+void speed_adjust_mode(char c)
+{
+
+	// Adjust speed using +/- keys
+	switch(c)
+	{
+		case '+':
+			pwm_incr(16);
+			break;
+		case '-':
+			pwm_incr(-16);
+			break;
+		case 'q':
+			cmd_mode = 0;
+			print_str("Exit speed adjust mode\n");
+			break;
+		break;
+	}
+
+}
+
+
 /*
  *
  */
@@ -623,3 +697,6 @@ void help_txt(void)
 	print_str("state                  Read radio state\n");
 	print_str("mot  [speed] [rtime]   set motor speed\n");
 }
+
+
+

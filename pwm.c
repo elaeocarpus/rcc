@@ -120,6 +120,18 @@ int pwm_ramp_speed(int s_initial, int s_final, int ramp_time)
 	return s_current;
 }
 
+
+
+/* pwm_get_speed
+ *
+ * Returns the current speed value
+. */
+int pwm_get_speed(void)
+{
+	return curr_pwm;
+}
+
+/*
 int pwm_get_speed(void)
 {
 	uint16_t s_fwd = PWM_S_FWD;
@@ -136,6 +148,7 @@ int pwm_get_speed(void)
 	}
 	return speed;
 }
+*/
 
 void pwm_change_speed(int new_speed, int ramp_time)
 {
