@@ -64,8 +64,11 @@ char c;
 
 char s[16];
 uint16_t adc_sample;
-uint16_t tick_msec;
+uint32_t tick_msec;
 uint32_t adc_count;
+uint32_t count_10msec;
+uint32_t count_1sec;
+
 
 uint8_t reg;
 char x;
@@ -116,7 +119,7 @@ int main(void)
 	// Hardware initialization
 	gpio_init();
 	uart2_init();
-	//timer2_init();
+	timer2_init();
 	//timer3_init();
 	timer4_init();
 	spi_init();
@@ -150,8 +153,6 @@ int main(void)
 
 	cc_reset();										// Send reset command to CC2500
 	print_str("CC2500 Reset\n");
-	delay(1000);
-	//pwm_set_speed(0);
 
 	pwm_out(0);										// Both FWD and REV PWM output off.
 
@@ -159,6 +160,7 @@ int main(void)
 
 	while(1)
 	{
+		// Serial comms
 		if(usart2_rxdata_rdy())
 		{
 			c = usart2_read();
@@ -169,7 +171,35 @@ int main(void)
 				cmd_proc(c);
 		}
 
+		// Timer tick 1msec
+		if(tick_msec)								// Incremented by timer ISR
+		{
+			tick_msec--;							// Decrement with atomic operation
 
+
+			// 10msec
+			if(!count_10msec)
+			{
+				count_10msec = 10;
+
+
+				// Take A/D conversion.
+				// Update speed.
+
+
+			}
+			count_10msec--;
+
+			// 1 sec
+			if(!count_1sec)
+			{
+				count_1sec = 1000;
+
+				//
+
+			}
+			count_1sec--;
+		}
 	}
 
 	return 0;
@@ -186,24 +216,16 @@ int main(void)
 void gpio_init(void)
 {
 	// GPIOA
-	GPIOA_clk_enable();											// Enable clock to GPIOA
+	GPIOA_clk_enable();												// Enable clock to GPIOA
 
+	GPIO_Config(GPIOA, GPIO_PIN0, GPIO_PP, GPIO_OUT_10MHz);			// PA0 Output Push-pull.
+	GPIO_Config(GPIOA, GPIO_PIN1, GPIO_PP, GPIO_OUT_10MHz);			// PA1 Output Push-pull.
+	GPIO_Config(GPIOA, GPIO_PIN2, ALT_FUNC_PP, GPIO_OUT_10MHz);		// PA2/UART2_TX set to alternate function output
+	GPIO_Config(GPIOA, GPIO_PIN3, GPIO_FLOAT, GPIO_IN);				// PA3/USART2_RX set to floating input
 
-	// PA0 - TIM2_CCO1
-	//GPIO_Config(GPIOA, GPIO_PIN0, GPIO_PP, GPIO_OUT_10MHz);	// Output Push-pull.
-	GPIO_Config(GPIOA, GPIO_PIN0, ALT_FUNC_PP, GPIO_OUT_10MHz);		// PWM output
-
-	// PA1 - TIM2_CCO2
-	GPIO_Config(GPIOA, GPIO_PIN1, ALT_FUNC_PP, GPIO_OUT_10MHz);		// PWM output
-
-	GPIO_Config(GPIOA, GPIO_PIN2, ALT_FUNC_PP, GPIO_OUT_10MHz);			// PA2/UART2_TX set to alternate function output
-	GPIO_Config(GPIOA, GPIO_PIN3, GPIO_FLOAT, GPIO_IN);					// PA3/USART2_RX set to floating input
-//	GPIO_Config(GPIOA, GPIO_PIN3, ALT_FUNC_PP, GPIO_OUT_10MHz);
-
-//	GPIO_Config(GPIOA, GPIO_PIN5, GPIO_PP, GPIO_OUT_10MHz);				// PA5 GPIO output. (LED2)
-	GPIO_Config(GPIOA, GPIO_PIN5, ALT_FUNC_PP, GPIO_OUT_10MHz);			// PA5 alternate function output (SPI1_SCK)
-	GPIO_Config(GPIOA, GPIO_PIN6, GPIO_FLOAT, GPIO_IN);					// PA6 alternate function input (SPI1_MISO)
-	GPIO_Config(GPIOA, GPIO_PIN7, ALT_FUNC_PP, GPIO_OUT_10MHz);			// PA7 alternate function output (SPI1_MOSI)
+	GPIO_Config(GPIOA, GPIO_PIN5, ALT_FUNC_PP, GPIO_OUT_10MHz);		// PA5 alternate function output (SPI1_SCK)
+	GPIO_Config(GPIOA, GPIO_PIN6, GPIO_FLOAT, GPIO_IN);				// PA6 alternate function input (SPI1_MISO)
+	GPIO_Config(GPIOA, GPIO_PIN7, ALT_FUNC_PP, GPIO_OUT_10MHz);		// PA7 alternate function output (SPI1_MOSI)
 
 
 	// GPIOB
@@ -262,12 +284,15 @@ void delay(int t)
  *
  * Timer 2		1kHz
  *
+ * Global variable tick_ms is incremented in this handler every 1msec.
+ * The main loop decrements the variable.
+ *
  */
 void __attribute__((interrupt("IRQ")))TIM2_IRQHandler(void)
 {
 	TIM2->SR &= ~TIM_SR_UIF;			// Clear timer update interrupt flag.
 
-	tick_msec = 1;						// Set 1msec tick flag
+	tick_msec++;						// Set 1msec tick flag
 
 }
 

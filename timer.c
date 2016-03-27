@@ -20,7 +20,7 @@ void TIM_SetPrescaler(TIM_TypeDef *timer, uint32_t psc);
  * 16-bit timer/counter
  *
  * Clock (TIM2CLK) 32MHz
- *
+ * 1msec timer tick
  */
 void timer2_init(void)
 {
@@ -54,22 +54,14 @@ void timer2_init(void)
 
 	// Capture/compare mode registers
 	TIM2->CCMR1 = (uint16_t)0x0000;
-		// CCR1
-//	TIM2->CCMR1 |= ((TIM_CCMR1_OC1M | (OCM_PWM_MODE_1 << 4)));
-		// CCR2	PWM Mode 1
-//	TIM2->CCMR1 |= ((TIM_CCMR1_OC2M | (OCM_PWM_MODE_1 << 12)));
-
 	TIM2->CCMR2 = (uint16_t)0x0000;
-		// CCR3
-//	TIM2->CCMR2 |= ((TIM_CCMR2_OC3M | (OCM_PWM_MODE_1 << 4)));
-		// CCR4
-//	TIM2->CCMR2 |= ((TIM_CCMR2_OC4M | (OCM_PWM_MODE_1 << 12)));
 
 	// Prescaler
 	TIM_SetPrescaler(TIM2, PSC_VAL);
 
 	// Auto-reload register.
-	TIM2->ARR = (uint16_t)((CK_CNT / PWM_FREQ) - 1);			// set PWM frequency
+	TIM2->ARR = 32000;
+	//TIM2->ARR = (uint16_t)((CK_CNT / PWM_FREQ) - 1);			// set PWM frequency
 
 	// Capture/compare registers
 	TIM2->CCR1 = 0;
@@ -79,16 +71,10 @@ void timer2_init(void)
 
 	// Output Compare (OCx) output enable
 	TIM2->CCER  = (uint16_t)0x0000;
-//	TIM2->CCER |= TIM_CCER_CC1E;			// Output Compare OC1 active
-//	TIM2->CCER |= TIM_CCER_CC2E;			// Output Compare OC2 active.
-//	TIM2->CCER |= TIM_CCER_CC3E;			// Output Compare OC3 active
-//	TIM2->CCER |= TIM_CCER_CC4E;			// Output Compare OC4 active.
-
 
 	// DMA control
 	TIM2->DCR  = (uint16_t)0x0000;			// DMA control register
 	TIM2->DMAR = (uint16_t)0x0000;
-
 
 	TIM2->DIER |= TIM_DIER_UIE;			// TM2 Update Interrupt Enable.
 
