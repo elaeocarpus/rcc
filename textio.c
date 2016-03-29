@@ -93,3 +93,22 @@ void Int32toHex(char *s, uint32_t x)
 
 	*s = '\0';
 }
+
+
+/*
+ *
+ */
+char* IntToStr(int value, char *str, int base)
+{
+	int r;
+
+
+	if(value == 0)
+		*str++ = '0';
+
+
+
+	*str = '\0';
+
+	return str;
+}

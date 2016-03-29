@@ -3,6 +3,8 @@
  *
  *  Created on: Feb 28, 2016
  *      Author: pmatthews
+ *
+ * Low-level access to CC2500 registers.
  */
 
 
@@ -216,7 +218,6 @@ uint8_t cc_write(uint8_t reg, uint8_t data)
 int cc_write_b(uint8_t addr, uint8_t *data, uint8_t n)
 {
 	uint8_t hdr;
-
 	int i;
 
 
@@ -236,6 +237,31 @@ int cc_write_b(uint8_t addr, uint8_t *data, uint8_t n)
 		 spi_out(*data++);			// Send data byte.
 
 		addr++;
+	}
+	CSn_HI();
+
+
+	return i;
+}
+
+/* cc_write_fifo
+ *
+ * Write to TX FIFO.
+ * This function doesn't check if there is room in the FIFO buffer.
+ */
+int cc_write_fifo(uint8_t *data, uint8_t n)
+{
+	uint8_t hdr;
+	int i;
+
+
+	hdr = 0x40 | TX_FIFO;			// R/W=0, burst=1.
+
+	CSn_LO();
+	status = spi_out(hdr);			// Send register address, read status.
+	for(i=0; i<n; i++)
+	{
+		 spi_out(*data++);			// Send data byte.
 	}
 	CSn_HI();
 

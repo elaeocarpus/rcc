@@ -29,10 +29,12 @@ uint8_t cc_status_update(void);
 int cc_set_base_frequency(uint32_t base_freq);
 
 
-// Public functions
+
 int cc_radio_config(RF_CONFIG *config);
 uint8_t StrToCmd(char *cmd);
 int cc_state_to_str(uint8_t state, char *s);
+
+int rf_write_tx_fifo(uint8_t *buf, int n);
 
 
 #endif /* CC_HAL_H_ */

@@ -20,15 +20,22 @@
 #define NULL  (void *)0
 #endif
 
-
+// External functions
 void kputc(uint8_t c);
 void print_str(char *s);
 void led_toggle(void);
 
 
+typedef struct {
+	char *cmd_txt;
+	void (*cmd_func)(void);
+	char *help_txt;
+} CMD_ITEM;
+
 #define CMD_BUF_SIZE 256
 
 // Command processor engine
+int command_process(void);
 void cmdline_proc(void);
 int cmd_parse(char *s);
 char *get_token(char *str, const char *delimiters, char *token);
@@ -38,14 +45,18 @@ void print_tokens(int argc, char **argv);
 
 
 // CC2500 command functions
+void cmd_version(void);
 void cmd_state(void);
 void cmd_reg(void);
 void cmd_wreg(void);
 void cmd_command(void);
-int cmd_status(void);
+void cmd_status(void);
 void help_txt(void);
 void cmd_mot(void);
+void cmd_speed_mode(void);
 void cmd_speed(void);
+void cmd_sres(void);
+void cmd_tx(void);
 
 
 char cmd_buf[CMD_BUF_SIZE];			// Command line buffer.
@@ -63,7 +74,23 @@ int n_args;
 int cmd_mode;
 
 
+// Array of command structures
+const CMD_ITEM cmd_list[] =
+{
+	{"help", help_txt, "Help text"},
+	{"ver", cmd_version, "Firmware version"},
+	{"state", cmd_state, "RF state"},
+	{"reg", cmd_reg, "Read registers"},
+	{"wreg", cmd_wreg, "Write registers"},
+	{"status", cmd_status, "Status registers"},
+	{"cmd", cmd_command, "Send command to radio"},
+	{"ctrl", cmd_speed_mode, "Go to speed control mode"},
+	{"speed", cmd_speed, "Set speed"},
+	{"sres", cmd_sres, "RF Reset"},
+	{"tx", cmd_tx, "Transmit a string"}
+};
 
+#define N_CMDS ((sizeof(cmd_list))/(sizeof(CMD_ITEM)))
 
 /* cmd_proc_init
  *
@@ -106,7 +133,8 @@ void cmd_proc(uint8_t c)
 
 			//print_tokens(n_args, args);
 
-			cmdline_proc();			// Process the command buffer.
+			command_process();					// Process the command.
+			//cmdline_proc();			// Process the command buffer.
 
 			kputc('\n');			// Put command prompt on a new line.
 		}
@@ -156,6 +184,43 @@ int cmd_parse(char *s)
 
 
 
+/* command_process
+ *
+ * Uses the array of command structures to process the command.
+ */
+int command_process(void)
+{
+	char *cmd;
+	CMD_ITEM *pcmd_item;			// Pointer to command structures
+	int i;
+
+
+	if(!n_args)									//
+		return 0;
+
+	cmd = args[0];								// Command is the first argument
+
+	pcmd_item = (CMD_ITEM *)cmd_list;			// Point to the first item in command structure array.
+
+	// Go through the array of command structures
+	for(i=0; i<N_CMDS; i++)
+	{
+		if(strcmp(cmd, pcmd_item->cmd_txt) == 0)			// If first arg matches command text
+		{
+			pcmd_item->cmd_func();							// Run the associated function.
+			return 1;										// Command was executed
+		}
+		pcmd_item++;
+	}
+
+	print_str("Unknown command: ");									// Command not found
+	print_str(cmd);
+	print_str("\n");
+
+	return 0;
+}
+
+
 /* cmdline_proc
  *
  * Process the command line.
@@ -165,6 +230,7 @@ void cmdline_proc(void)
 {
 	char *cmd;
 
+
 	if(!n_args)
 		return;
 
@@ -172,42 +238,13 @@ void cmdline_proc(void)
 
 	if(strcmp(cmd, "help") == 0)
 	{
-		help_txt();
-	}
-	else if(strcmp(cmd, "ver") == 0)
-	{
-		print_str("v1.00");
-	}
-	else if(strcmp(cmd, "state") == 0)
-	{
-		cmd_state();
-	}
-	else if(strcmp(cmd, "reg") == 0)
-	{
-		cmd_reg();
-	}
-	else if(strcmp(cmd, "wreg") == 0)
-	{
-		cmd_wreg();
 	}
 	else if(strcmp(cmd, "cmd") == 0)
 	{
 		cmd_command();
 	}
-	else if(strcmp(cmd, "status") == 0)
-	{
-		cmd_status();
-	}
 	else if(strcmp(cmd, "mot") == 0)
 	{
-//		cmd_mot();
-		cmd_mode = 1;
-		print_str("Speed adjust mode\n");
-		print_str("Use +/- to adjust speed\n");
-	}
-	else if(strcmp(cmd, "speed") == 0)
-	{
-		cmd_speed();
 	}
 	else
 	{
@@ -514,10 +551,17 @@ void cmd_command(void)
 }
 
 
-/*
+/* cmd_status
+ *
+ * Read status register
+ *
+ * Example:
+ *  status				Read all status registers
+ *  status 3A			Read status register 0x3A (TXBYTES)
+ *  status 30 5			Read the first 5 status registers
  *
  */
-int cmd_status(void)
+void cmd_status(void)
 {
 	char s[16];
 	uint32_t addr;				// Status register address
@@ -527,11 +571,13 @@ int cmd_status(void)
 	char *ptr;
 
 
+	// This first part is to determine the register start address
+	// and the number of registers to display.
 	if(n_args == 1)
 	{
 		// No register specified. Print all the status registers.
 		addr = 0x30;								// Status register start address
-		n = N_STATUS_REGS;
+		n = N_STATUS_REGS;							// Set no. of registers to print.
 	}
 	else
 	{
@@ -541,22 +587,24 @@ int cmd_status(void)
 		// Get the register count
 		if(n_args == 2)								// No count specified.
 		{
-			n = 1;
+			n = 1;									// Print one register
 		}
-		else
+		else										// Print n-registers
 		{
 			n = strtol(args[2], &ptr, 10);			// Get count in decimal.
 		}
 
 	}
 
+	// Check register address.
 	if(addr < 0x30 || addr > 0x3D)
 	{
-		print_str("Status register out of range\n");
-		return 0;
+		print_str("Invalid status register address\n");
+		return;
 	}
 
-	// Print status register contents
+
+	// Print the status registers.
 	for(i=0; i<n; i++)
 	{
 		if(addr > 0x3D)
@@ -576,13 +624,22 @@ int cmd_status(void)
 
 	}
 
-
-	return 0;
+	return;
 }
 
+
 /*
+ * Change to speed control mode.
  *
  */
+void cmd_speed_mode(void)
+{
+	cmd_mode = 1;
+	print_str("Speed adjust mode\n");
+	print_str("Use +/- to adjust speed\n");
+
+}
+
 void cmd_mot(void)
 {
 	char s[16];
@@ -625,8 +682,9 @@ void cmd_mot(void)
 
 /* cmd_speed
  *
- * Usage:
+ * Set the speed or read the current speed.
  *
+ * Usage:
  * speed			Get the current speed
  * speed <val>		Set the current speed
  *
@@ -659,11 +717,16 @@ void cmd_speed(void)
 }
 
 
-/*			cmd_mode = 1;
+/* speed_adjust_mode
  *
+ * When in this mode the speed can be adjusted with +/- keys.
+ * Use 'q' to quit and return to the command processor.
  */
 void speed_adjust_mode(char c)
 {
+	int speed;
+	char s[16];
+
 
 	// Adjust speed using +/- keys
 	switch(c)
@@ -677,18 +740,44 @@ void speed_adjust_mode(char c)
 		case 'q':
 			cmd_mode = 0;
 			print_str("Exit speed adjust mode\n");
-			break;
-		break;
+			return;
 	}
+
+
+
+	// Print the current speed.
+	speed = pwm_get_speed();
+//	itoa(speed, s, 10);
+	IntToHex(s, speed);
+	print_str(s);
+	print_str("\n");
+
 
 }
 
 
-/*
+/* help_txt
  *
+ * Prints the help text from information in the command structure array.
  */
 void help_txt(void)
 {
+	CMD_ITEM *pcmd_item;			// Pointer to command structures
+	int i;
+
+	// Go through the array of command structures
+	pcmd_item = (CMD_ITEM *)cmd_list;			// Point to the first item in command structure array.
+	for(i=0; i<N_CMDS; i++)
+	{
+		print_str(pcmd_item->cmd_txt);			// Print the command text
+		print_str("\t\t");						// Print some spaces
+		print_str(pcmd_item->help_txt);			// Print help text for the command.
+		print_str("\n");
+
+		pcmd_item++;
+	}
+
+/*
 	print_str("help\n");
 	print_str("reg  [addr] [count]    Read config registers\n");
 	print_str("wreg <addr>            Write config registers\n");
@@ -696,7 +785,59 @@ void help_txt(void)
 	print_str("status [reg]           Read radio status register\n");
 	print_str("state                  Read radio state\n");
 	print_str("mot  [speed] [rtime]   set motor speed\n");
+	print_str("speed <val>\n");
+*/
+}
+
+/*
+ *
+ */
+void cmd_version(void)
+{
+	print_str("v1.00");
 }
 
 
+/*
+ * SRES		 CC2500 Reset
+ */
+void cmd_sres(void)
+{
+	cc_write_cmd(SRES);
+	print_str("SRES\n");
+}
 
+
+/*
+ * tx
+ *
+ * Send a string to radio for transmit
+ */
+void cmd_tx(void)
+{
+	char *str;
+	int n;
+	char s[16];
+
+
+	// Check there is a string
+	if(n_args < 2)
+	{
+		print_str("No string\n");
+		return;
+	}
+
+	str = (char *)args[1];			// Point to the start of the string
+	n = strlen(str);				// Get the string length
+
+	// Message echo
+	print_str("Sending ");
+	print_str(" ");
+	IntToHex(s, n);
+	print_str(s);
+	print_str(" bytes\n");
+
+	// Write the string into the TX FIFO
+	rf_write_tx_fifo((uint8_t *)str, n);
+
+}

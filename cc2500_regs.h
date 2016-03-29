@@ -58,7 +58,7 @@
 #define FSCAL0		0x26	//
 #define RCCTRL1		0x27	// RC Oscillator configuration
 #define RCCTRL0		0x28	// RC Oscillator configuration
-#define FSTEST		0x29	// Frequency sysnthesizer calibration control
+#define FSTEST		0x29	// Frequency synthesizer calibration control
 #define PTEST		0x2A	// Production test
 #define AGCTEST		0x2B	// AGC test
 #define	TEST2		0x2C	// Various test settings
@@ -96,6 +96,8 @@
 #define RCCTRL1_STATUS	0x3C	// Last RC oscillator calibration result
 #define RCCTRL0_STATUS	0x3D	// Last RC oscillator calibration result
 
+#define TX_FIFO			0x3F	//
+#define RX_FIFO			0x3F	//
 
 // CC2500 States
 #define	IDLE_STATE  			0
@@ -118,6 +120,9 @@ uint8_t cc_read(uint8_t reg);
 int cc_read_b(uint8_t addr, uint8_t *data, uint8_t n);
 uint8_t cc_write(uint8_t reg, uint8_t data);
 int cc_write_b(uint8_t addr, uint8_t *data, uint8_t n);
+
+// FIFO buffer access
+int cc_write_fifo(uint8_t *data, uint8_t n);
 
 // Chip state
 uint8_t cc_get_state(void);

@@ -126,6 +126,40 @@ int cc_read_rssi(void)
 }
 
 
+/* Write data to the Tx FIFO buffer
+ *
+ * *buf			Buffer holding data to write
+ * n			No. of bytes to write
+ *
+ *
+ */
+int rf_write_tx_fifo(uint8_t *buf, int n)
+{
+
+	// Add the LEN and ADDR bytes to the packet
+
+
+	cc_write_fifo(buf, n);
+
+	return n;
+}
+
+
+/* Read data from the Rx FIFO buffer.
+ *
+ * *buf			Pointer to buffer to hold data read from Rx FIFO.
+ * n 			Number of bytes to read
+ *
+ * Returns
+ * No. of bytes read
+ */
+int rf_read_rx_fifo(uint8_t *buf, int n)
+{
+
+	return n;
+}
+
+
 
 
 /******************************************************************************
@@ -136,7 +170,7 @@ int cc_read_rssi(void)
 /* cc_radio_config
  *
  * Parameters
- * *config			Ppointer to configuration data structure.
+ * *config			Pointer to configuration data structure.
  *
  * Returns
  *
